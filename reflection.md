@@ -7,6 +7,12 @@
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+### key actions:
+
+1. Add a pet (and owner) profile
+2. Add a care task
+3. Generate today's plan
+
 **b. Design changes**
 
 - Did your design change during implementation?
