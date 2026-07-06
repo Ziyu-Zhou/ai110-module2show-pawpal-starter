@@ -1,41 +1,43 @@
 classDiagram
-    %% PawPal+ system design — keep this in sync with the implementation.
-
     class Owner {
-        +str name
-        +dict preferences
-        +list~Pet~ pets
-        +add_pet(pet: Pet) void
-        +get_preferences() dict
+        +String name
+        +String preferences
+        +List~Pet~ pets
+        +add_pet(pet) void
+        +get_all_tasks() List~Task~
     }
 
     class Pet {
-        +str name
-        +str species
-        +list~Task~ tasks
-        +add_task(task: Task) void
-        +remove_task(task: Task) void
-        +list_tasks() list~Task~
+        +String name
+        +String species
+        +List~Task~ tasks
+        +add_task(task) void
+        +edit_task(index, task) void
     }
 
     class Task {
-        +str title
+        +String description
         +int duration_minutes
-        +str priority
-        +priority_score() int
+        +String frequency
+        +String priority
+        +bool completed
+        +mark_complete() void
     }
 
     class Scheduler {
         +int available_minutes
-        +str start_time
-        +dict preferences
-        +sort_tasks(tasks: list~Task~) list~Task~
-        +filter_tasks(tasks: list~Task~) list~Task~
-        +build_plan(tasks: list~Task~) list
-        +explain() str
+        +String start_time
+        +List~Task~ scheduled_tasks
+        +List~Task~ skipped_tasks
+        +List~String~ explanations
+        +Map~Task, String~ scheduled_start_times
+        +generate_schedule(owner) List~Task~
+        +explain_schedule() List~String~
+        +format_daily_plan(owner) String
     }
 
-    Owner "1" --> "*" Pet : owns
-    Pet "1" --> "*" Task : has
-    Scheduler ..> Task : schedules
-    Scheduler ..> Owner : reads preferences
+    Owner "1" o-- "0..*" Pet : owns
+    Pet "1" *-- "0..*" Task : has
+    Owner ..> Task : accesses
+    Scheduler ..> Owner : retrieves tasks
+    Scheduler ..> Task : organizes

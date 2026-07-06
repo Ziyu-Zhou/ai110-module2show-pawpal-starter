@@ -21,7 +21,9 @@ classDiagram
         +String frequency
         +String priority
         +bool completed
-        +mark_complete() void
+        +Date due_date
+        +String start_time
+        +mark_complete() Optional~Task~
     }
 
     class Scheduler {
@@ -31,13 +33,22 @@ classDiagram
         +List~Task~ skipped_tasks
         +List~String~ explanations
         +Map~Task, String~ scheduled_start_times
+        +List~String~ conflict_warnings
+        +sort_by_time(tasks, shortest_first) List~Task~
+        +filter_tasks(owner, completed, pet_name) List~Task~
+        +complete_task(pet, task) Optional~Task~
+        +detect_conflicts(owner) List~String~
         +generate_schedule(owner) List~Task~
         +explain_schedule() List~String~
         +format_daily_plan(owner) String
+        -_matches_preference(task, preferences) bool
+        -_find_pet_for_task(owner, task) Optional~Pet~
     }
 
     Owner "1" o-- "0..*" Pet : owns
-    Pet "1" *-- "0..*" Task : has
-    Owner ..> Task : accesses
-    Scheduler ..> Owner : retrieves tasks
-    Scheduler ..> Task : organizes
+    Pet "1" o-- "0..*" Task : manages
+    Owner ..> Task : retrieves
+    Scheduler ..> Owner : reads tasks and preferences
+    Scheduler ..> Pet : completes and finds tasks
+    Scheduler --> "0..*" Task : schedules and skips
+    Task ..> Task : creates next recurrence

@@ -40,22 +40,21 @@
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
 
+* Constraints considered: The scheduler considers task priority, the owner’s preferences, completion status, task duration, available minutes, and fixed start-time conflicts.
+
+* How they were prioritized: Safety and essential care come first, so high-priority tasks are considered before medium- and low-priority tasks. Owner preferences break ties between tasks with the same priority.
+
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
-The `detect_conflicts()` method uses a nested loop to compare every scheduled
-task with every task after it. This keeps the algorithm straightforward and
-allows it to detect partial overlaps using each task's start time and duration,
-not only tasks with identical start times. The tradeoff is that it takes
-quadratic time, or O(n²), and repeatedly parses times and looks up pets. This is
+The detect_conflicts method uses a nested loop to compare every scheduled
+task with every task after it. This keeps the algorithm straightforward.The tradeoff is that it takes
+O(n²), and repeatedly parses times and looks up pets. This is
 reasonable for PawPal because an owner is likely to schedule only a small
 number of pet-care tasks in one day, so readability is more valuable than a
-more complex optimization. If the app needed to handle hundreds of tasks, the
-algorithm could precompute each task's time interval and pet name, sort the
-intervals by start time, and compare only intervals that could still overlap.
-
+more complex optimization.
 ---
 
 ## 3. AI Collaboration
@@ -65,10 +64,22 @@ intervals by start time, and compare only intervals that could still overlap.
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
 - What kinds of prompts or questions were most helpful?
 
+* I used AI throughout the project to brainstorm the class design, identify scheduling edge cases, draft automated tests, improve the Streamlit display, update the UML diagram, and refine the README documentation.
+
+* The best prompts are telling the AI to do one very specific task.
+
+
+
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
 - How did you evaluate or verify what the AI suggested?
+
+1. There was a time my prompt was probably too broad so the AI decide to write 500 line of code and I ended up reverting all of them.
+
+2. I like to tell the AI to test everything it just did.
+
+
 
 ---
 
@@ -79,11 +90,19 @@ intervals by start time, and compare only intervals that could still overlap.
 - What behaviors did you test?
 - Why were these tests important?
 
+
+1. Behaviors tested: I tested task creation and validation, pet and owner task management, duration sorting, filtering by pet and completion status, priority-based scheduling, owner-preference tie-breaking, available-time limits, daily and weekly recurrence, duplicate recurrence prevention, start-time assignment, conflict detection, and schedule formatting.
+
+2. These tests cover the scheduler’s main responsibilities and its most likely failure points.
+
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
 
+1. I am highly confident that the scheduler’s core behavior works correctly because all 40 automated tests pass. 
+
+2. I would test schedules crossing midnight, duplicate pet or task names
 ---
 
 ## 5. Reflection
@@ -92,10 +111,17 @@ intervals by start time, and compare only intervals that could still overlap.
 
 - What part of this project are you most satisfied with?
 
+* When things start coming together and the app finally worked, because there was huge chunk of time the program spent on backend only.
+
+
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
 
+* I think I will redesign the time element of the program, I like what I have not as well because it's easier to use for the user.
+
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+* AI can be very powerful and allow a single developer to build project very fast as long as the developer know what he is trying to do.

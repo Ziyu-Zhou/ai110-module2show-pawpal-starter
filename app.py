@@ -10,12 +10,8 @@ st.title("🐾 PawPal+")
 
 st.markdown(
     """
-Welcome to the PawPal+ starter app.
-
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
-
-Use this app as your interactive demo once your backend classes/functions exist.
+Welcome to PawPal+, a pet care planner that organizes tasks around your
+available time, priorities, and preferences.
 """
 )
 
@@ -29,14 +25,13 @@ You will design and implement the scheduling logic and connect it to this Stream
 """
     )
 
-with st.expander("What you need to build", expanded=True):
+with st.expander("What PawPal+ can do"):
     st.markdown(
         """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
+- Track care tasks for multiple pets
+- Sort and filter tasks for a clearer overview
+- Build a prioritized daily plan within your available time
+- Flag overlapping task times and explain scheduling decisions
 """
     )
 
@@ -91,7 +86,21 @@ with col2:
 with col3:
     priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
 
-frequency = st.selectbox("Frequency", ["daily", "weekly", "once"])
+col1, col2 = st.columns(2)
+with col1:
+    frequency = st.selectbox("Frequency", ["daily", "weekly", "once"])
+with col2:
+    use_fixed_time = st.checkbox(
+        "Set a fixed start time",
+        help="Tasks with overlapping fixed times will trigger a warning.",
+    )
+
+task_start_time = None
+if use_fixed_time:
+    task_start_time = st.time_input(
+        "Task start time",
+        value=time(8, 0),
+    )
 
 selected_pet = None
 if owner.pets:
@@ -120,26 +129,77 @@ if st.button("Add task"):
             int(duration),
             frequency,
             priority,
+            start_time=(
+                task_start_time.strftime("%H:%M")
+                if task_start_time is not None
+                else None
+            ),
         )
         selected_pet.add_task(task)
         st.session_state.pop("scheduler", None)
         st.success(f"Added '{cleaned_title}' for {selected_pet.name}.")
 
-task_rows = [
-    {
-        "pet": pet.name,
-        "task": task.description,
-        "duration_minutes": task.duration_minutes,
-        "frequency": task.frequency,
-        "priority": task.priority,
-    }
-    for pet in owner.pets
-    for task in pet.tasks
-]
+all_tasks = owner.get_all_tasks()
+if all_tasks:
+    st.write("Current tasks")
+    filter_col, status_col, sort_col = st.columns(3)
+    with filter_col:
+        pet_filter = st.selectbox(
+            "Filter by pet",
+            ["All pets", *[pet.name for pet in owner.pets]],
+        )
+    with status_col:
+        status_filter = st.selectbox(
+            "Filter by status",
+            ["All tasks", "Incomplete", "Completed"],
+        )
+    with sort_col:
+        sort_order = st.selectbox(
+            "Sort by duration",
+            ["Shortest first", "Longest first"],
+        )
 
-if task_rows:
-    st.write("Current tasks:")
-    st.table(task_rows)
+    completed_filter = {
+        "All tasks": None,
+        "Incomplete": False,
+        "Completed": True,
+    }[status_filter]
+    display_scheduler = Scheduler(0)
+    filtered_tasks = display_scheduler.filter_tasks(
+        owner,
+        completed=completed_filter,
+        pet_name=None if pet_filter == "All pets" else pet_filter,
+    )
+    sorted_tasks = display_scheduler.sort_by_time(
+        filtered_tasks,
+        shortest_first=sort_order == "Shortest first",
+    )
+    task_to_pet = {
+        task: pet.name
+        for pet in owner.pets
+        for task in pet.tasks
+    }
+    task_rows = [
+        {
+            "Pet": task_to_pet[task],
+            "Task": task.description,
+            "Duration": f"{task.duration_minutes} min",
+            "Frequency": task.frequency.title(),
+            "Priority": task.priority.title(),
+            "Status": "Completed" if task.completed else "Incomplete",
+            "Fixed time": task.start_time or "Flexible",
+        }
+        for task in sorted_tasks
+    ]
+
+    if task_rows:
+        st.table(task_rows)
+        st.caption(
+            f"Showing {len(task_rows)} of {len(all_tasks)} tasks, "
+            f"{sort_order.lower()}."
+        )
+    else:
+        st.info("No tasks match the selected filters.")
 else:
     st.info("No tasks yet. Add one above.")
 
@@ -175,10 +235,48 @@ if st.button("Generate schedule"):
 
 if "scheduler" in st.session_state:
     scheduler = st.session_state.scheduler
-    st.code(
-        scheduler.format_daily_plan(owner),
-        language="text",
-    )
+    if scheduler.scheduled_tasks:
+        scheduled_minutes = sum(
+            task.duration_minutes
+            for task in scheduler.scheduled_tasks
+        )
+        st.success(
+            f"Scheduled {len(scheduler.scheduled_tasks)} "
+            f"{'task' if len(scheduler.scheduled_tasks) == 1 else 'tasks'} "
+            f"in {scheduled_minutes} minutes."
+        )
+        scheduled_task_to_pet = {
+            task: pet.name
+            for pet in owner.pets
+            for task in pet.tasks
+        }
+        schedule_rows = [
+            {
+                "Start": scheduler.scheduled_start_times[task],
+                "Pet": scheduled_task_to_pet.get(task, "Unknown"),
+                "Task": task.description,
+                "Duration": f"{task.duration_minutes} min",
+                "Priority": task.priority.title(),
+            }
+            for task in scheduler.scheduled_tasks
+        ]
+        st.table(schedule_rows)
+    else:
+        st.warning("No tasks fit the current schedule settings.")
+
+    st.markdown("#### Conflict check")
+    if scheduler.conflict_warnings:
+        for warning in scheduler.conflict_warnings:
+            st.warning(warning)
+    else:
+        st.success("No scheduling conflicts detected.")
+
+    if scheduler.skipped_tasks:
+        st.warning(
+            f"{len(scheduler.skipped_tasks)} "
+            f"{'task was' if len(scheduler.skipped_tasks) == 1 else 'tasks were'} "
+            "not scheduled."
+        )
 
     with st.expander("Why this schedule?"):
         for explanation in scheduler.explain_schedule():
