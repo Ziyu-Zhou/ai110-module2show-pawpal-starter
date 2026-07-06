@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 
 class Owner:
@@ -47,6 +47,8 @@ class Task:
         frequency: str,
         priority: str,
         completed: bool = False,
+        due_date: date | None = None,
+        start_time: str | None = None,
     ):
         """Initialize and validate a pet care task."""
         if duration_minutes <= 0:
@@ -56,15 +58,46 @@ class Task:
         if normalized_priority not in self.VALID_PRIORITIES:
             raise ValueError("priority must be 'low', 'medium', or 'high'")
 
+        normalized_start_time = None
+        if start_time is not None:
+            try:
+                parsed_start_time = datetime.strptime(start_time, "%H:%M")
+            except ValueError as error:
+                raise ValueError(
+                    "start_time must use HH:MM format"
+                ) from error
+            normalized_start_time = parsed_start_time.strftime("%H:%M")
+
         self.description = description
         self.duration_minutes = duration_minutes
         self.frequency = frequency
         self.priority = normalized_priority
         self.completed = completed
+        self.due_date = due_date or date.today()
+        self.start_time = normalized_start_time
 
-    def mark_complete(self) -> None:
-        """Mark this task as completed."""
+    def mark_complete(self) -> "Task | None":
+        """Complete this task and return its next recurring occurrence."""
+        if self.completed:
+            return None
+
         self.completed = True
+
+        recurrence_days = {
+            "daily": 1,
+            "weekly": 7,
+        }.get(self.frequency.lower())
+        if recurrence_days is None:
+            return None
+
+        return Task(
+            description=self.description,
+            duration_minutes=self.duration_minutes,
+            frequency=self.frequency,
+            priority=self.priority,
+            due_date=self.due_date + timedelta(days=recurrence_days),
+            start_time=self.start_time,
+        )
 
 
 class Scheduler:
@@ -88,6 +121,101 @@ class Scheduler:
         self.skipped_tasks: list[Task] = []
         self.explanations: list[str] = []
         self.scheduled_start_times: dict[Task, str] = {}
+        self.conflict_warnings: list[str] = []
+
+    def sort_by_time(
+        self,
+        tasks: list[Task],
+        shortest_first: bool = True,
+    ) -> list[Task]:
+        """Return tasks sorted by their duration without changing the input."""
+        return sorted(
+            tasks,
+            key=lambda task: task.duration_minutes,
+            reverse=not shortest_first,
+        )
+
+    def filter_tasks(
+        self,
+        owner: Owner,
+        completed: bool | None = None,
+        pet_name: str | None = None,
+    ) -> list[Task]:
+        """Return tasks matching an optional completion status and pet name."""
+        normalized_pet_name = (
+            pet_name.strip().casefold()
+            if pet_name is not None
+            else None
+        )
+
+        return [
+            task
+            for pet in owner.pets
+            if (
+                normalized_pet_name is None
+                or pet.name.casefold() == normalized_pet_name
+            )
+            for task in pet.tasks
+            if completed is None or task.completed is completed
+        ]
+
+    def complete_task(self, pet: Pet, task: Task) -> Task | None:
+        """Complete a pet's task and add its next occurrence when recurring."""
+        if task not in pet.tasks:
+            raise ValueError("task does not belong to this pet")
+
+        next_occurrence = task.mark_complete()
+        if next_occurrence is not None:
+            pet.add_task(next_occurrence)
+
+        return next_occurrence
+
+    def detect_conflicts(self, owner: Owner) -> list[str]:
+        """Return warnings for scheduled tasks whose time ranges overlap."""
+        warnings = []
+
+        for index, first_task in enumerate(self.scheduled_tasks):
+            first_start = datetime.strptime(
+                self.scheduled_start_times[first_task],
+                "%H:%M",
+            )
+            first_end = first_start + timedelta(
+                minutes=first_task.duration_minutes
+            )
+
+            for second_task in self.scheduled_tasks[index + 1:]:
+                second_start = datetime.strptime(
+                    self.scheduled_start_times[second_task],
+                    "%H:%M",
+                )
+                second_end = second_start + timedelta(
+                    minutes=second_task.duration_minutes
+                )
+
+                overlap_start = max(first_start, second_start)
+                overlap_end = min(first_end, second_end)
+                if overlap_start >= overlap_end:
+                    continue
+
+                first_pet = self._find_pet_for_task(owner, first_task)
+                second_pet = self._find_pet_for_task(owner, second_task)
+                first_label = (
+                    first_pet.name if first_pet is not None else "Unknown pet"
+                )
+                second_label = (
+                    second_pet.name
+                    if second_pet is not None
+                    else "Unknown pet"
+                )
+                warnings.append(
+                    f"Warning: '{first_task.description}' ({first_label}) "
+                    f"conflicts with '{second_task.description}' "
+                    f"({second_label}) from "
+                    f"{overlap_start.strftime('%H:%M')} to "
+                    f"{overlap_end.strftime('%H:%M')}."
+                )
+
+        return warnings
 
     def generate_schedule(self, owner: Owner) -> list[Task]:
         """Generate a prioritized schedule for all of an owner's pets."""
@@ -95,6 +223,7 @@ class Scheduler:
         self.skipped_tasks = []
         self.explanations = []
         self.scheduled_start_times = {}
+        self.conflict_warnings = []
 
         preferences = owner.preferences.strip().lower()
         tasks = sorted(
@@ -116,11 +245,17 @@ class Scheduler:
                 )
             elif task.duration_minutes <= remaining_minutes:
                 self.scheduled_tasks.append(task)
-                self.scheduled_start_times[task] = current_time.strftime(
-                    "%H:%M"
+                task_start = (
+                    datetime.strptime(task.start_time, "%H:%M")
+                    if task.start_time is not None
+                    else current_time
                 )
+                self.scheduled_start_times[task] = task_start.strftime("%H:%M")
                 remaining_minutes -= task.duration_minutes
-                current_time += timedelta(minutes=task.duration_minutes)
+                task_end = task_start + timedelta(
+                    minutes=task.duration_minutes
+                )
+                current_time = max(current_time, task_end)
 
                 reason = f"it has {task.priority} priority and fits the available time"
                 if self._matches_preference(task, preferences):
@@ -135,6 +270,7 @@ class Scheduler:
                     f"{remaining_minutes} minutes remain."
                 )
 
+        self.conflict_warnings = self.detect_conflicts(owner)
         return self.scheduled_tasks.copy()
 
     def explain_schedule(self) -> list[str]:

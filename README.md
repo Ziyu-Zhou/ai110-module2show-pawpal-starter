@@ -53,6 +53,31 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 #   09:00 — Feeding (10 min) [priority: high]
 #   ...
 ```
+Today's Schedule
+----------------
+- Mochi's morning walk (20 minutes, high priority)
+- Feed Luna breakfast (10 minutes, high priority)
+- Brush Mochi's fur (15 minutes, low priority)
+
+Why this schedule?
+- Scheduled 'Mochi's morning walk' because it has high priority and fits the available time and matches the owner's preference.
+- Scheduled 'Feed Luna breakfast' because it has high priority and fits the available time.
+- Scheduled 'Brush Mochi's fur' because it has low priority and fits the available time.
+(.venv) prts@MichaelZhous-MacBook-Pro ai110-module2show-pawpal-starter % python main.py
+Today's Schedule
+----------------
+Daily plan for Jordan's pets:
+  08:00 — Mochi: Mochi's morning walk (20 min) [priority: high]
+  08:20 — Luna: Feed Luna breakfast (10 min) [priority: high]
+  08:30 — Mochi: Brush Mochi's fur (15 min) [priority: low]
+
+Why this schedule?
+- Scheduled 'Mochi's morning walk' because it has high priority and fits the available time and matches the owner's preference.
+- Scheduled 'Feed Luna breakfast' because it has high priority and fits the available time.
+- Scheduled 'Brush Mochi's fur' because it has low priority and fits the available time.
+
+
+
 
 ## 🧪 Testing PawPal+
 
@@ -80,6 +105,15 @@ Sample test output:
 | Filtering | | e.g., skip tasks if time runs out |
 | Conflict handling | | e.g., overlapping time slots |
 | Recurring tasks | | e.g., daily vs. weekly |
+
+
+| Feature | Method(s) | Description |
+|---|---|---|
+| Sorting | `Scheduler.sort_by_time()` | Sorts tasks by duration. Shortest-first is the default; `shortest_first=False` sorts longest-first. |
+| Filtering | `Scheduler.filter_tasks()` | Filters tasks by pet name, completion status, or both. Pet-name matching is case-insensitive. |
+| Conflict detection | `Scheduler.detect_conflicts()` | Detects overlapping task durations and returns warning messages. Back-to-back tasks are allowed. |
+| Recurring tasks | `Task.mark_complete()`, `Scheduler.complete_task()` | Creates the next daily or weekly occurrence and adds it to the same pet. One-time tasks do not recur. |
+
 
 ## 📸 Demo Walkthrough
 
