@@ -32,8 +32,12 @@ class Scheduler:
     def __init__(self, available_minutes: int):
         self.available_minutes = available_minutes
         self.scheduled_tasks: list[Task] = []
+        self.skipped_tasks: list[Task] = []
+        self.explanations: list[str] = []
 
-    def generate_schedule(self, tasks: list[Task]) -> list[Task]:
+    def generate_schedule(
+        self, tasks: list[Task], preferences: str
+    ) -> list[Task]:
         pass
 
     def explain_schedule(self) -> list[str]:

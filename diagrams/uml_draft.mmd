@@ -23,7 +23,9 @@ classDiagram
     class Scheduler {
         +int available_minutes
         +List~Task~ scheduled_tasks
-        +generate_schedule(tasks) List~Task~
+        +List~Task~ skipped_tasks
+        +List~String~ explanations
+        +generate_schedule(tasks, preferences) List~Task~
         +explain_schedule() List~String~
     }
 

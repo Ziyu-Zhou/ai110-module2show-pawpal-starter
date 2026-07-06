@@ -7,6 +7,15 @@
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+1. Owner stores the owner’s name, preferences, and pets. add_pet() adds a pet to the owner.
+
+2. Pet stores its name, species, and care tasks. It can add or edit tasks.
+
+3. Task describes one care activity using a title, duration, and priority.
+
+4. Scheduler receives tasks, selects those that fit within available_minutes, and explains its choices.
+
+
 ### key actions:
 
 1. Add a pet (and owner) profile
@@ -17,6 +26,10 @@
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+
+1. Yes, perference of owner was just existing but not connnected to the scheduler, now it's updated
+
+2. Also explain_schedule didn't quite work because it's not sure what explaination can be use which is not also updated.
 
 ---
 
