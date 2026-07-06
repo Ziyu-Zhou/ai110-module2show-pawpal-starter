@@ -4,6 +4,7 @@ classDiagram
         +String preferences
         +List~Pet~ pets
         +add_pet(pet) void
+        +get_all_tasks() List~Task~
     }
 
     class Pet {
@@ -15,20 +16,28 @@ classDiagram
     }
 
     class Task {
-        +String title
+        +String description
         +int duration_minutes
+        +String frequency
         +String priority
+        +bool completed
+        +mark_complete() void
     }
 
     class Scheduler {
         +int available_minutes
+        +String start_time
         +List~Task~ scheduled_tasks
         +List~Task~ skipped_tasks
         +List~String~ explanations
-        +generate_schedule(tasks, preferences) List~Task~
+        +Map~Task, String~ scheduled_start_times
+        +generate_schedule(owner) List~Task~
         +explain_schedule() List~String~
+        +format_daily_plan(owner) String
     }
 
     Owner "1" o-- "0..*" Pet : owns
     Pet "1" *-- "0..*" Task : has
-    Scheduler ..> Task : schedules
+    Owner ..> Task : accesses
+    Scheduler ..> Owner : retrieves tasks
+    Scheduler ..> Task : organizes
