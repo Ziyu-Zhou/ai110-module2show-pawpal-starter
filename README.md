@@ -79,20 +79,33 @@ Why this schedule?
 
 
 
-## 🧪 Testing PawPal+
+## Testing PawPal+
 
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+The automated tests cover owner and pet task management, task validation,
+duration-based sorting, filtering, schedule prioritization and formatting,
+daily and weekly recurrence, available-time limits, and scheduling conflict
+detection.
 
-```
-# Paste your pytest output here
+```text
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/prts/Documents/selflearning/codepath/ai110/ai110-module2show-pawpal-starter
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.14.1
+collected 40 items
+
+tests/test_owner.py ....                                                 [ 10%]
+tests/test_pawpal.py .....                                               [ 22%]
+tests/test_pet.py ....                                                   [ 32%]
+tests/test_scheduler.py ...................                              [ 80%]
+tests/test_task.py ........                                              [100%]
+
+============================== 40 passed in 0.04s ==============================
 ```
 
 ## 📐 Smarter Scheduling
